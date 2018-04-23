@@ -15,7 +15,7 @@ Wue.prototype._init = function (options) {
     this.$el = document.querySelector(options.el);
 
     if(typeof options.data !== 'function') {
-        console.warn('data must be a function!')
+        console.warn('data must return an object!')
         return;
     }
     this.$data = options.data();
@@ -25,8 +25,30 @@ Wue.prototype._init = function (options) {
     // 当model改变时，会触发其中的指令类更新来保证view实时更新。
     this._binding = {};
 
+    this._proxy(this.$data);
     this._observe(this.$data);
     this._compile(this.$el);
+};
+
+/**
+ * 将data代理到Wue实例上
+ */
+Wue.prototype._proxy = function (data) {
+    for(let key in data) {
+        if(typeof data[key] === 'object') {
+            this._proxy(data[key]);
+        }
+        Object.defineProperty(this, key, {
+            enumerable: true,
+            configurable: true,
+            get: function () {
+                return data[key];
+            },
+            set: function (newVal) {
+                data[key] = newVal;
+            }
+        });
+    }
 };
 
 /**

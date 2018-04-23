@@ -16,11 +16,14 @@
 <script type="text/javascript" src="wue.js"></script>
 <script type="text/javascript">
     window.onload = function () {
-        new Wue({
+        let app = new Wue({
             el:'#app',
             data() {
                 return {
-                    number: 0
+                    number: 0,
+                    obj: {
+                        a: 1
+                    }
                 }
             },
             methods: {
@@ -29,6 +32,10 @@
                 }
             }
         });
+        window.app = app;   // 导出成全局变量，可在浏览器控制台访问到
+        console.log(app.$data.number);
+        console.log(app.number);
+        console.log(app.obj.a);
     };
 </script>
 </html>
