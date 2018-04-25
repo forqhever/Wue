@@ -11,44 +11,54 @@ function Wue(options) {
  * @private
  */
 Wue.prototype._init = function (options) {
+
+    this._initData(options);
+    this._initProxyAndObserver();
+    this.$beforeMount();
+    this._compile(this.$el);
+    this.$mounted();
+};
+
+Wue.prototype._initData = function (options) {
     this.$options = options;
     this.$el = document.querySelector(options.el);
 
     if(typeof options.data !== 'function') {
-        console.warn('data must return an object!')
+        console.warn('data must return an object!');
         return;
     }
     this.$data = options.data();
+    this.$mounted = options.mounted;
+    this.$beforeMount = options.beforeMount;
     this.$methods = options.methods;
 
     // _binding保存着model与view的映射关系，即Watcher的实例。
     // 当model改变时，会触发其中的指令类更新来保证view实时更新。
     this._binding = {};
-
-    this._proxy(this.$data);
-    this._observe(this.$data);
-    this._compile(this.$el);
 };
 
 /**
  * 将data代理到Wue实例上
  */
-Wue.prototype._proxy = function (data) {
-    for(let key in data) {
-        if(typeof data[key] === 'object') {
-            this._proxy(data[key]);
-        }
-        Object.defineProperty(this, key, {
-            enumerable: true,
-            configurable: true,
-            get: function () {
-                return data[key];
-            },
-            set: function (newVal) {
-                data[key] = newVal;
-            }
-        });
+Wue.prototype._initProxyAndObserver = function () {
+    for(let key in this.$data) {
+      this._proxy(key);
+      this._observe(key);
     }
+};
+
+Wue.prototype._proxy = function (key) {
+    Object.defineProperty(this, key, {
+        enumerable: true,
+        configurable: true,
+        get: function () {
+            console.log(key);
+            return this.$data[key];
+        },
+        set: function (newVal) {
+            this.$data[key] = newVal;
+        }
+    });
 };
 
 /**
@@ -56,40 +66,36 @@ Wue.prototype._proxy = function (data) {
  * @param obj
  * @private
  */
-Wue.prototype._observe = function (obj) {
+Wue.prototype._observe = function (key) {
     let value;
-    for(let key in obj) {
-        if(obj.hasOwnProperty(key)) {
 
-            this._binding[key] = {
-                _watchers: []
-            };
+    this._binding[key] = {
+        _watchers: []
+    };
 
-            let binding = this._binding[key];
+    let binding = this._binding[key];
 
-            value = obj[key];
-            if(typeof value === 'object') {
-                this._observe(value);
-            }
-            Object.defineProperty(obj, key, {
-                enumerable: true,
-                configurable: true,
-                get: function () {
-                    console.log(`get ${key} : ${value}`);
-                    return value;
-                },
-                set: function (newVal) {
-                    if(value !== newVal) {
-                        console.log(`update ${key} from ${value} to ${newVal}`);
-                        value = newVal;
-                        binding._watchers.forEach(function (watcher) {
-                            watcher.update();
-                        })
-                    }
-                }
-            })
-        }
+    value = this.$data[key];
+    if(typeof value === 'object') {
+        this._observe(value);
     }
+    Object.defineProperty(this.$data, key, {
+        enumerable: true,
+        configurable: true,
+        get: function () {
+            console.log(`get ${key} : ${value}`);
+            return value;
+        },
+        set: function (newVal) {
+            if(value !== newVal) {
+                console.log(`update ${key} from ${value} to ${newVal}`);
+                value = newVal; // 由于闭包存在，会保存value值
+                binding._watchers.forEach(function (watcher) {
+                    watcher.update();
+                })
+            }
+        }
+    });
 };
 
 /**

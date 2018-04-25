@@ -10,7 +10,8 @@
             <input type="text" w-model="number">
             <button type="button" w-click="increment">增加</button>
         </form>
-        <h3 w-bind="number"></h3>
+        <h3 w-bind="a"></h3>
+        <h3 w-bind="obj"></h3>
     </div>
 </body>
 <script type="text/javascript" src="wue.js"></script>
@@ -21,21 +22,26 @@
             data() {
                 return {
                     number: 0,
+                    a: 11,
                     obj: {
-                        a: 1
+                        size: 1
                     }
                 }
+            },
+            beforeMount () {
+                console.log('beforeMount!');
+            },
+            mounted () {
+                console.log('mounted!');
             },
             methods: {
                 increment: function() {
                     this.number++;
+                    this.a += 2;
                 }
             }
         });
         window.app = app;   // 导出成全局变量，可在浏览器控制台访问到
-        console.log(app.$data.number);
-        console.log(app.number);
-        console.log(app.obj.a);
     };
 </script>
 </html>
